@@ -27,7 +27,7 @@ public:
 	virtual bool OnEntity(int Index, vec2 Pos);
 	virtual bool CanBeMovedOnBalance(int Cid);
 	virtual void OnPlayerInfoChange(class CPlayer *pP);
-	virtual bool CanSpawn(class CPlayer *pP, vec2 *pPos);
+	virtual bool CanSpawn(int Cid, vec2 *pPos);
 	virtual const char *GetTeamName(int Team);
 	virtual int GetAutoTeam(int NotThisId);
 	virtual bool CanJoinTeam(int Team, int NotThisId);

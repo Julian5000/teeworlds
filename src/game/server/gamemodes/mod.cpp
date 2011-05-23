@@ -245,9 +245,9 @@ void CGameControllerMOD::OnPlayerInfoChange(class CPlayer *pP)
 	IGameController::OnPlayerInfoChange(pP);
 }
 
-bool CGameControllerMOD::CanSpawn(class CPlayer *pP, vec2 *pPos)
+bool CGameControllerMOD::CanSpawn(int Cid, vec2 *pPos)
 {
-	bool res = IGameController::CanSpawn(pP, pPos);
+	bool res = IGameController::CanSpawn(Cid, pPos);
 	return res;
 }
 
