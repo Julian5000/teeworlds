@@ -2197,8 +2197,7 @@ void CEditor::AddFileDialogEntry(int Index, CUIRect *pView)
 	Graphics()->QuadsDrawTL(&QuadItem, 1);
 	Graphics()->QuadsEnd();
 
-	static int s_FileButton = 0;
-	if(DoButton_File(&s_FileButton, m_FileList[Index].m_aName, m_FilesSelectedIndex == Index, &Button, 0, 0))
+	if(DoButton_File(&m_FileList[Index], m_FileList[Index].m_aName, m_FilesSelectedIndex == Index, &Button, 0, 0))
 	{
 		if(!m_FileList[Index].m_IsDir)
 			str_copy(m_aFileDialogFileName, m_FileList[Index].m_aFilename, sizeof(m_aFileDialogFileName));
@@ -3380,18 +3379,6 @@ void CEditor::UpdateAndRender()
 	// toggle gui
 	if(Input()->KeyDown(KEY_TAB))
 		m_GuiActive = !m_GuiActive;
-
-	if(Input()->KeyDown(KEY_F5))
-		Save("maps/debug_test2.map");
-
-	if(Input()->KeyDown(KEY_F6))
-		Load("maps/debug_test2.map", IStorage::TYPE_ALL);
-	
-	if(Input()->KeyDown(KEY_F8))
-		Load("maps/debug_test.map", IStorage::TYPE_ALL);
-	
-	if(Input()->KeyDown(KEY_F7))
-		Save("maps/quicksave.map");
 
 	if(Input()->KeyDown(KEY_F10))
 		m_ShowMousePointer = false;
