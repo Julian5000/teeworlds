@@ -85,6 +85,7 @@ public:
 	int origfeetcolor;
 	
 	int m_LastActionTick;
+	int m_TeamChangeTick;
 	struct
 	{
 		int m_TargetX;

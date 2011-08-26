@@ -217,6 +217,7 @@ void IGameController::StartRound()
 	m_aTeamscore[TEAM_RED] = 0;
 	m_aTeamscore[TEAM_BLUE] = 0;
 	m_ForceBalanced = false;
+	Server()->DemoRecorder_HandleAutoStart();
 	char aBuf[256];
 	str_format(aBuf, sizeof(aBuf), "start round type='%s' teamplay='%d'", m_pGameType, m_GameFlags&GAMEFLAG_TEAMS);
 	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
@@ -520,6 +521,8 @@ void IGameController::Tick()
 			}
 		}
 	}
+
+	DoWincheck();
 }
 
 
@@ -658,51 +661,50 @@ bool IGameController::CanChangeTeam(CPlayer *pPlayer, int JoinTeam)
 		return true;
 }
 
-void IGameController::DoPlayerScoreWincheck()
+void IGameController::DoWincheck()
 {
-	if(m_GameOverTick == -1 && !m_Warmup)
+	if(m_GameOverTick == -1 && !m_Warmup && !GameServer()->m_World.m_ResetRequested)
 	{
-		// gather some stats
-		int Topscore = 0;
-		int TopscoreCount = 0;
-		for(int i = 0; i < MAX_CLIENTS; i++)
+		if(IsTeamplay())
 		{
-			if(GameServer()->m_apPlayers[i])
+			// check score win condition
+			if((g_Config.m_SvScorelimit > 0 && (m_aTeamscore[TEAM_RED] >= g_Config.m_SvScorelimit || m_aTeamscore[TEAM_BLUE] >= g_Config.m_SvScorelimit)) ||
+				(g_Config.m_SvTimelimit > 0 && (Server()->Tick()-m_RoundStartTick) >= g_Config.m_SvTimelimit*Server()->TickSpeed()*60))
 			{
-				if(GameServer()->m_apPlayers[i]->m_Score > Topscore)
-				{
-					Topscore = GameServer()->m_apPlayers[i]->m_Score;
-					TopscoreCount = 1;
-				}
-				else if(GameServer()->m_apPlayers[i]->m_Score == Topscore)
-					TopscoreCount++;
+				if(m_aTeamscore[TEAM_RED] != m_aTeamscore[TEAM_BLUE])
+					EndRound();
+				else
+					m_SuddenDeath = 1;
 			}
 		}
-
-		// check score win condition
-		if((g_Config.m_SvScorelimit > 0 && Topscore >= g_Config.m_SvScorelimit) ||
-			(g_Config.m_SvTimelimit > 0 && (Server()->Tick()-m_RoundStartTick) >= g_Config.m_SvTimelimit*Server()->TickSpeed()*60))
+		else
 		{
-			if(TopscoreCount == 1)
-				EndRound();
-			else
-				m_SuddenDeath = 1;
-		}
-	}
-}
+			// gather some stats
+			int Topscore = 0;
+			int TopscoreCount = 0;
+			for(int i = 0; i < MAX_CLIENTS; i++)
+			{
+				if(GameServer()->m_apPlayers[i])
+				{
+					if(GameServer()->m_apPlayers[i]->m_Score > Topscore)
+					{
+						Topscore = GameServer()->m_apPlayers[i]->m_Score;
+						TopscoreCount = 1;
+					}
+					else if(GameServer()->m_apPlayers[i]->m_Score == Topscore)
+						TopscoreCount++;
+				}
+			}
 
-void IGameController::DoTeamScoreWincheck()
-{
-	if(m_GameOverTick == -1 && !m_Warmup)
-	{
-		// check score win condition
-		if((g_Config.m_SvScorelimit > 0 && (m_aTeamscore[TEAM_RED] >= g_Config.m_SvScorelimit || m_aTeamscore[TEAM_BLUE] >= g_Config.m_SvScorelimit)) ||
-			(g_Config.m_SvTimelimit > 0 && (Server()->Tick()-m_RoundStartTick) >= g_Config.m_SvTimelimit*Server()->TickSpeed()*60))
-		{
-			if(m_aTeamscore[TEAM_RED] != m_aTeamscore[TEAM_BLUE])
-				EndRound();
-			else
-				m_SuddenDeath = 1;
+			// check score win condition
+			if((g_Config.m_SvScorelimit > 0 && Topscore >= g_Config.m_SvScorelimit) ||
+				(g_Config.m_SvTimelimit > 0 && (Server()->Tick()-m_RoundStartTick) >= g_Config.m_SvTimelimit*Server()->TickSpeed()*60))
+			{
+				if(TopscoreCount == 1)
+					EndRound();
+				else
+					m_SuddenDeath = 1;
+			}
 		}
 	}
 }
