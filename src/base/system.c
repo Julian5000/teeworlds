@@ -7,9 +7,7 @@
 #include <ctype.h>
 #include <time.h>
 
-/*#include "detect.h"*/
 #include "system.h"
-/*#include "e_console.h"*/
 
 #if defined(CONF_FAMILY_UNIX)
 	#include <sys/time.h>
@@ -44,6 +42,10 @@
 	#include <errno.h>
 #else
 	#error NOT IMPLEMENTED
+#endif
+
+#if defined(CONF_PLATFORM_SOLARIS)
+	#include <sys/filio.h>
 #endif
 
 #if defined(__cplusplus)
@@ -123,7 +125,7 @@ static IOHANDLE logfile = 0;
 static void logger_file(const char *line)
 {
 	io_write(logfile, line, strlen(line));
-	io_write(logfile, "\n", 1);
+	io_write_newline(logfile);
 	io_flush(logfile);
 }
 
@@ -139,8 +141,6 @@ void dbg_logger_file(const char *filename)
 
 }
 /* */
-
-int memory_alloced = 0;
 
 typedef struct MEMHEADER
 {
@@ -163,8 +163,10 @@ void *mem_alloc_debug(const char *filename, int line, unsigned size, unsigned al
 {
 	/* TODO: fix alignment */
 	/* TODO: add debugging */
+	MEMTAIL *tail;
 	MEMHEADER *header = (struct MEMHEADER *)malloc(size+sizeof(MEMHEADER)+sizeof(MEMTAIL));
-	MEMTAIL *tail = (struct MEMTAIL *)(((char*)(header+1))+size);
+	dbg_assert(header != 0, "mem_alloc failure");
+	tail = (struct MEMTAIL *)(((char*)(header+1))+size);
 	header->size = size;
 	header->filename = filename;
 	header->line = line;
@@ -220,8 +222,9 @@ void mem_debug_dump(IOHANDLE file)
 	{
 		while(header)
 		{
-			str_format(buf, sizeof(buf), "%s(%d): %d\n", header->filename, header->line, header->size);
+			str_format(buf, sizeof(buf), "%s(%d): %d", header->filename, header->line, header->size);
 			io_write(file, buf, strlen(buf));
+			io_write_newline(file);
 			header = header->next;
 		}
 
@@ -276,8 +279,13 @@ IOHANDLE io_open(const char *filename, int flags)
 		if(!filename || !length || filename[length-1] == '\\')
 			return 0x0;
 		handle = FindFirstFile(filename, &finddata);
-		if(handle == INVALID_HANDLE_VALUE || str_comp(filename+length-str_length(finddata.cFileName), finddata.cFileName))
+		if(handle == INVALID_HANDLE_VALUE)
 			return 0x0;
+		else if(str_comp(filename+length-str_length(finddata.cFileName), finddata.cFileName) != 0)
+		{
+			FindClose(handle);
+			return 0x0;
+		}
 		FindClose(handle);
 	#endif
 		return (IOHANDLE)fopen(filename, "rb");
@@ -337,6 +345,15 @@ long int io_length(IOHANDLE io)
 unsigned io_write(IOHANDLE io, const void *buffer, unsigned size)
 {
 	return fwrite(buffer, 1, size, (FILE*)io);
+}
+
+unsigned io_write_newline(IOHANDLE io)
+{
+#if defined(CONF_FAMILY_WINDOWS)
+	return fwrite("\r\n", 1, 2, (FILE*)io);
+#else
+	return fwrite("\n", 1, 1, (FILE*)io);
+#endif
 }
 
 int io_close(IOHANDLE io)
@@ -578,18 +595,18 @@ int net_addr_comp(const NETADDR *a, const NETADDR *b)
 	return mem_comp(a, b, sizeof(NETADDR));
 }
 
-void net_addr_str(const NETADDR *addr, char *string, int max_length)
+void net_addr_str(const NETADDR *addr, char *string, int max_length, int add_port)
 {
 	if(addr->type == NETTYPE_IPV4)
 	{
-		if(addr->port != 0)
+		if(add_port != 0)
 			str_format(string, max_length, "%d.%d.%d.%d:%d", addr->ip[0], addr->ip[1], addr->ip[2], addr->ip[3], addr->port);
 		else
 			str_format(string, max_length, "%d.%d.%d.%d", addr->ip[0], addr->ip[1], addr->ip[2], addr->ip[3]);
 	}
 	else if(addr->type == NETTYPE_IPV6)
 	{
-		if(addr->port != 0)
+		if(add_port != 0)
 			str_format(string, max_length, "[%x:%x:%x:%x:%x:%x:%x:%x]:%d",
 				(addr->ip[0]<<8)|addr->ip[1], (addr->ip[2]<<8)|addr->ip[3], (addr->ip[4]<<8)|addr->ip[5], (addr->ip[6]<<8)|addr->ip[7],
 				(addr->ip[8]<<8)|addr->ip[9], (addr->ip[10]<<8)|addr->ip[11], (addr->ip[12]<<8)|addr->ip[13], (addr->ip[14]<<8)|addr->ip[15],
@@ -824,7 +841,15 @@ static int priv_net_create_socket(int domain, int type, struct sockaddr *addr, i
 	sock = socket(domain, type, 0);
 	if(sock < 0)
 	{
+#if defined(CONF_FAMILY_WINDOWS)
+		char buf[128];
+		int error = WSAGetLastError();
+		if(FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS, 0, error, 0, buf, sizeof(buf), 0) == 0)
+			buf[0] = 0;
+		dbg_msg("net", "failed to create socket with domain %d and type %d (%d '%s')", domain, type, error, buf);
+#else
 		dbg_msg("net", "failed to create socket with domain %d and type %d (%d '%s')", domain, type, errno, strerror(errno));
+#endif
 		return -1;
 	}
 
@@ -841,7 +866,15 @@ static int priv_net_create_socket(int domain, int type, struct sockaddr *addr, i
 	e = bind(sock, addr, sockaddrlen);
 	if(e != 0)
 	{
+#if defined(CONF_FAMILY_WINDOWS)
+		char buf[128];
+		int error = WSAGetLastError();
+		if(FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS, 0, error, 0, buf, sizeof(buf), 0) == 0)
+			buf[0] = 0;
+		dbg_msg("net", "failed to bind socket with domain %d and type %d (%d '%s')", domain, type, error, buf);
+#else
 		dbg_msg("net", "failed to bind socket with domain %d and type %d (%d '%s')", domain, type, errno, strerror(errno));
+#endif
 		priv_net_close_socket(sock);
 		return -1;
 	}
@@ -1477,7 +1510,7 @@ int net_socket_read_wait(NETSOCKET sock, int time)
 	return 0;
 }
 
-unsigned time_timestamp()
+int time_timestamp()
 {
 	return time(0);
 }
