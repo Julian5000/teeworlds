@@ -4,7 +4,9 @@
 
 #include <base/system.h>
 
+#include <engine/console.h>
 #include <engine/shared/config.h>
+#include <engine/shared/netban.h>
 #include <engine/server/server.h>
 
 #include <game/server/gamecontext.h>
@@ -240,7 +242,7 @@ void CGameControllerOpenFNG::DoRagequit()
 		if (net_addr_from_str(&Addr, m_aRagequitAddr) == 0)
 		{
 			Addr.port = 0;
-			((CServer*)Server())->BanAdd(Addr, CFG(PunishRagequit), "Forcefully left the server while being frozen.");
+			((CServer*)Server())->m_ServerBan.BanAddr(&Addr, CFG(PunishRagequit), "Forcefully left the server while being frozen.");
 		}
 		*m_aRagequitAddr = '\0';
 	}
