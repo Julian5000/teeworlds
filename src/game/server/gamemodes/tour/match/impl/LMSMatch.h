@@ -32,10 +32,11 @@ namespace tour
             int _lastLeadTid;
             int _tmp_orderc;
 
-            LMSMatch();
+            //LMSMatch();
 
             void allToSpawn() const;
         public:
+            LMSMatch();
             virtual ~LMSMatch();
 
             virtual bool start(int arena);
@@ -58,7 +59,7 @@ namespace tour
 
             virtual void dump();
 
-            template<typename T> friend class Match* Factory::createMatchInstance();
+            //template<typename T> friend class Match* Factory::createMatchInstance();
     };
 
     class TeamInfo

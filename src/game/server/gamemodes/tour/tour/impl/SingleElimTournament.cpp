@@ -341,7 +341,7 @@ namespace tour
                 dump();
             }
         } else {
-            DV("will not handle leave event for id %i (%i, %i, %i)",cid,_started,_finished,_players.count(cid));
+            DV("will not handle leave event for id %i (%i, %i, %zu)",cid,_started,_finished,_players.count(cid));
         }
     }
 

@@ -20,13 +20,13 @@ namespace tour
     class Factory
     {
         private:
-            static std::map<std::string, class Tournament*(*)()> _tourMap;
-            static std::map<std::string, class Match*(*)()> _matchMap;
+            //static std::map<std::string, class Tournament*(*)()> _tourMap;
+            //static std::map<std::string, class Match*(*)()> _matchMap;
             static char _defaultMatchStyle[MAXMATCHNAME + 1];
             static char _defaultTournamentStyle[MAXTOURNAME + 1];
 
-            template<typename T> static class Tournament* createTournamentInstance();
-            template<typename T> static class Match* createMatchInstance();
+            //template<typename T> static class Tournament* createTournamentInstance();
+            //template<typename T> static class Match* createMatchInstance();
         public:
             static void init();
             static void registerStuff();

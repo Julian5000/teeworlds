@@ -13,13 +13,13 @@
 
 #include "Factory.h"
 
-#define REGTOUR(NAME) _tourMap[ #NAME ] = &createTournamentInstance<NAME>;
-#define REGMATCH(NAME) _matchMap[ #NAME ] = &createMatchInstance<NAME>;
+//#define REGTOUR(NAME) _tourMap[ #NAME ] = &createTournamentInstance<NAME>;
+//#define REGMATCH(NAME) _matchMap[ #NAME ] = &createMatchInstance<NAME>;
 
 namespace tour
 {
-    std::map<std::string, Tournament*(*)()> Factory::_tourMap;
-    std::map<std::string, Match*(*)()> Factory::_matchMap;
+    //std::map<std::string, Tournament*(*)()> Factory::_tourMap;
+    //std::map<std::string, Match*(*)()> Factory::_matchMap;
     char Factory::_defaultMatchStyle[MAXMATCHNAME + 1];
     char Factory::_defaultTournamentStyle[MAXTOURNAME + 1];
     void Factory::init()
@@ -34,8 +34,8 @@ namespace tour
 
     void Factory::registerStuff()
     {
-        REGTOUR(SingleElimTournament);
-        REGMATCH(LMSMatch);
+        //REGTOUR(SingleElimTournament);
+        //REGMATCH(LMSMatch);
     }
 
     Tournament *Factory::allocTournament()
@@ -45,8 +45,9 @@ namespace tour
 
     Tournament *Factory::allocCustomTournament(const char*tourname)
     {
-        std::string s(tourname ? tourname : _defaultTournamentStyle);
-        return (_tourMap.count(s)) ? _tourMap[s]() : NULL;
+    	return new SingleElimTournament;
+        //std::string s(tourname ? tourname : _defaultTournamentStyle);
+        //return (_tourMap.count(s)) ? _tourMap[s]() : NULL;
     }
 
     Match *Factory::allocMatch()
@@ -56,11 +57,12 @@ namespace tour
 
     Match *Factory::allocCustomMatch(const char*matchname)
     {
-        std::string s(matchname ? matchname : _defaultMatchStyle);
-        return (_matchMap.count(s)) ? _matchMap[s]() : NULL;
+    	return new LMSMatch;
+        //std::string s(matchname ? matchname : _defaultMatchStyle);
+        //return (_matchMap.count(s)) ? _matchMap[s]() : NULL;
     }
 
-    template<typename T> class Tournament* Factory::createTournamentInstance()
+    /*template<typename T> class Tournament* Factory::createTournamentInstance()
     {
         return new T;
     }
@@ -68,5 +70,5 @@ namespace tour
     template<typename T> class Match* Factory::createMatchInstance()
     {
         return new T;
-    }
+    }*/
 }

@@ -36,7 +36,7 @@ namespace tour
             std::list<int> _leaveQueue;
             bool _forceTestPending;
 
-            SingleElimTournament();
+            //SingleElimTournament();
 
             int getProp(int slot) const {return _propagateMap[slot];}
             void initPropagateMap();
@@ -48,6 +48,7 @@ namespace tour
             void performLeave(int cid);
             bool waitsForMatches(Match *m) const;
         public:
+            SingleElimTournament();
             virtual ~SingleElimTournament();
             virtual void reset();
             virtual bool start(class Lineup*);
@@ -65,7 +66,7 @@ namespace tour
 
             virtual void dump();
 
-            template<typename T> friend class Tournament* Factory::createTournamentInstance();
+            //template<typename T> friend class Tournament* Factory::createTournamentInstance();
     };
 
     class MatchInfo
